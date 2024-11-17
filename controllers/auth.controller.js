@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt';
 import User from '../model/usermodel.js';
+import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
 
 // Register function
 export const register = async (req, res) => {
@@ -47,15 +49,26 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Invalid password" });
         }
 
-        // Successful login
-        return res.status(200).json({ message: "Login successful", user });
+        // Generate JWT token
+        const token = jwt.sign({ userId: user._id,isAdmin:false },  process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+
+        // Convert Mongoose document to plain object
+        const userObj = user.toObject();
+        delete userObj.password; // Exclude the password fields
+
+        // Set cookie with the token
+        res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'lax' });
+
+        return res.status(200).json({ message: "Login successful", userInfo: userObj });
     } catch (error) {
         console.error("Login error:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
-// Logout 
+
+// Logout function
 export const logout = (req, res) => {
-    // Implement logout logic, e.g., clearing a session or token
+    // Clear the cookie
+    res.clearCookie('token');
     return res.status(200).json({ message: "Logout successful" });
 };
