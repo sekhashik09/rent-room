@@ -1,21 +1,55 @@
 import "./register.scss";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useState } from "react";
 
 function Register() {
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("")
+
+    const formData = new FormData(e.target);
+
+    const username = formData.get('username');
+    const email = formData.get('email');
+    const password = formData.get('password');
+
+    try {
+      await axios.post('http://localhost:3000/api/auth/register', {
+        username,
+        email,
+        password,
+      });
+      navigate('/login');
+    } catch (err) {
+      console.log(err);
+      setError(err.response?.data?.message || "An error occurred during registration.");
+    }
+    finally{
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="register">
       <div className="formContainer">
-        <form>
+        <form onSubmit={handleSubmit}>
           <h1>Create an Account</h1>
           <input name="username" type="text" placeholder="Username" />
           <input name="email" type="text" placeholder="Email" />
           <input name="password" type="password" placeholder="Password" />
-          <button >Register</button>
+          <button disabled={isLoading}>Register</button>
+          {error && <p className="error">{error}</p>}
           <Link to="/login">Do you have an account?</Link>
         </form>
       </div>
       <div className="imgContainer">
-        <img src="/bg.png" alt="" />
+        <img src="/bg.png" alt="Background" />
       </div>
     </div>
   );
